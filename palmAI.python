@@ -1,0 +1,61 @@
+import csv
+import re
+
+def parse_person(person_str):
+"Extract name and title from 'Name (Title)' format"
+match = re.match(r'([^(]+)\(([^)]+)\)', person_str.strip())
+if match:
+name = match.group(1).strip()
+title = match.group(2).strip()
+return name, title
+return person_str.strip(), ""
+
+# Read your input CSV file
+input_file = 'companies.csv'  # Replace with your actual filename
+output_file = 'transformed_output.csv'
+
+with open(input_file, 'r', encoding='utf-8') as infile:
+reader = csv.DictReader(infile)
+
+# Prepare output file
+with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
+fieldnames = ['PalmAI Key People', 'Title'] + [f for f in reader.fieldnames if f != 'PalmAI Key People']
+writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+writer.writeheader()
+
+# Process each row
+for row in reader:
+key_people = row.get('PalmAI Key People', '')
+
+if key_people:
+# Split by semicolon to get individual people
+people_list = [p.strip() for p in key_people.split(';') if p.strip()]
+
+for person in people_list:
+name, title = parse_person(person)
+
+# Create new row with person info first
+new_row = {
+PalmAI Key People': name,
+Title': title
+}
+
+# Add all other columns
+for field in reader.fieldnames:
+if field != 'PalmAI Key People':
+new_row[field] = row[field]
+
+writer.writerow(new_row)
+else:
+# If no key people, create one row with empty person fields
+new_row = {
+PalmAI Key People': '',
+Title': ''
+}
+for field in reader.fieldnames:
+if field != 'PalmAI Key People':
+new_row[field] = row[field]
+writer.writerow(new_row)
+
+print(f"Transformation complete! Output saved to {output_file}")
+print("Each person from PalmAI Key People now has their own row with all company data repeated.")
